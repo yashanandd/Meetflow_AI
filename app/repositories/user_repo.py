@@ -1,0 +1,27 @@
+from typing import Optional
+from sqlalchemy.orm import Session
+from app.models.user import User
+
+class UserRepository:
+    @staticmethod
+    def get_by_id(db: Session, user_id: int) -> Optional[User]:
+        return db.query(User).filter(User.id == user_id).first()
+
+    @staticmethod
+    def get_by_email(db: Session, email: str) -> Optional[User]:
+        return db.query(User).filter(User.email == email).first()
+
+    @staticmethod
+    def create(db: Session, full_name: str, email: str, password_hash: str) -> User:
+        user = User(full_name=full_name, email=email, password_hash=password_hash)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    @staticmethod
+    def update(db: Session, user: User, full_name: str) -> User:
+        user.full_name = full_name
+        db.commit()
+        db.refresh(user)
+        return user
