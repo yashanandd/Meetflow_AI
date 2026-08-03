@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm Session
+from sqlalchemy.orm import Session
 from app.database.session import get_db
 from app.middleware.auth import get_current_user
 from app.models.user import User

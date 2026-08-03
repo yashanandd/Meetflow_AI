@@ -36,8 +36,14 @@ class DashboardService:
         ).count()
 
         # Upcoming meetings (meeting_date >= now or most recent 5)
-        now = datetime.now(timezone.utc)
-        upcoming = [m for m in all_meetings if m.meeting_date and m.meeting_date >= now]
+        now_naive = datetime.now()
+        upcoming = []
+        for m in all_meetings:
+            if m.meeting_date:
+                m_date = m.meeting_date.replace(tzinfo=None) if m.meeting_date.tzinfo else m.meeting_date
+                if m_date >= now_naive:
+                    upcoming.append(m)
+
         if not upcoming:
             upcoming = all_meetings[:5]
         else:
