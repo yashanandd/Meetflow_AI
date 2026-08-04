@@ -36,6 +36,48 @@ MeetFlow AI is a production-ready, full-stack AI-powered meeting management appl
 
 ---
 
+## System Architecture & CI/CD Flow
+
+```text
+Developer
+    │
+    ▼
+GitHub Repository
+    │
+    ▼
+GitHub Webhook
+    │
+    ▼
+Jenkins Pipeline
+    │
+ ┌──┴─────────────────────────┐
+ │ Checkout                   │
+ │ Backend Tests              │
+ │ Frontend Build             │
+ │ Docker Build               │
+ │ Docker Push                │
+ │ Kubernetes Deployment      │
+ │ Verification               │
+ └────────────────────────────┘
+    │
+    ▼
+Docker Hub
+    │
+    ▼
+Minikube Kubernetes Cluster
+    │
+ ┌──┴───────────────┐
+ │ Frontend Pod     │
+ │ Backend Pod      │
+ │ MySQL Pod        │
+ └──────────────────┘
+    │
+    ▼
+Browser
+```
+
+---
+
 ## Project Folder Structure
 
 ```
