@@ -7,6 +7,6 @@ data:
   SECRET_KEY: "meetflow-super-secret-jwt-key-change-in-production-32chars"
   ALGORITHM: "HS256"
   ACCESS_TOKEN_EXPIRE_MINUTES: "1440"
-  DATABASE_URL: "sqlite:////app/data/meetflow.db"
+  DATABASE_URL: "sqlite:///./meetflow.db"
   AI_PROVIDER: "heuristic"
   VITE_BACKEND_URL: "http://backend-service:8000"
