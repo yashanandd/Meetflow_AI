@@ -53,11 +53,20 @@ pipeline {
         stage('Docker Push') {
             steps {
                 echo 'Authenticating and pushing Docker images to Docker Hub...'
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: "${DOCKER_CREDS_ID}",
+                        usernameVariable: 'DOCKER_USER_VAR',
+                        passwordVariable: 'DOCKER_PASS_VAR'
+                    )
+                ]) {
+                    writeFile file: 'docker_pat.txt', text: env.DOCKER_PASS_VAR
                     bat '''
                         docker logout
                         echo Username=%DOCKER_USER_VAR%
-                        echo %DOCKER_PASS_VAR% | docker login -u %DOCKER_USER_VAR% --password-stdin
+                        powershell -Command "Write-Output 'Password Length:'; Write-Output $env:DOCKER_PASS_VAR.Length"
+                        type docker_pat.txt | docker login -u %DOCKER_USER_VAR% --password-stdin
+                        if exist docker_pat.txt del docker_pat.txt
                     '''
                     bat "docker push ${BACKEND_IMAGE}"
                     bat "docker push ${BACKEND_LATEST}"
@@ -91,6 +100,9 @@ pipeline {
     }
 
     post {
+        always {
+            bat 'if exist docker_pat.txt del docker_pat.txt'
+        }
         success {
             echo 'Jenkins CI/CD Pipeline Completed Successfully! MeetFlow AI is deployed.'
         }
