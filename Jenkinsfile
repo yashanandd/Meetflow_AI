@@ -53,13 +53,19 @@ pipeline {
         stage('Docker Push') {
             steps {
                 echo 'Pushing Docker images to Docker Hub...'
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
-                    bat 'echo %DOCKER_PASS_VAR% | docker login -u %DOCKER_USER_VAR% --password-stdin'
-                    bat "docker push ${BACKEND_IMAGE}"
-                    bat "docker push ${BACKEND_LATEST}"
-                    bat "docker push ${FRONTEND_IMAGE}"
-                    bat "docker push ${FRONTEND_LATEST}"
+                script {
+                    try {
+                        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
+                            bat 'docker login -u %DOCKER_USER_VAR% -p %DOCKER_PASS_VAR%'
+                        }
+                    } catch (Exception e) {
+                        echo 'Jenkins credential check skipped or failed, using host Docker authentication...'
+                    }
                 }
+                bat "docker push ${BACKEND_IMAGE}"
+                bat "docker push ${BACKEND_LATEST}"
+                bat "docker push ${FRONTEND_IMAGE}"
+                bat "docker push ${FRONTEND_LATEST}"
             }
         }
 
