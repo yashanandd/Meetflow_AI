@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosClient = axios.create({
-  baseURL: '', // Uses Vite proxy in development or relative path
+  baseURL: import.meta.env.VITE_API_BASE_URL || '', // Configurable API base URL, defaults to relative path
   headers: {
     'Content-Type': 'application/json',
   },

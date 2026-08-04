@@ -117,6 +117,17 @@ npm run dev
 ```
 Frontend will be live at `http://localhost:5173`.
 
+### 3. Docker (Beginner Friendly)
+
+Run both Backend and Frontend in one command:
+
+```bash
+docker compose up --build
+```
+
+- **Frontend**: `http://localhost:5173`
+- **Backend API**: `http://localhost:8000`
+
 ---
 
 ## Environment Variables Configuration
