@@ -18,6 +18,15 @@ pipeline {
             }
         }
 
+        stage('Build Information') {
+            steps {
+                echo 'Gathering environment and build information...'
+                bat 'git rev-parse --short HEAD'
+                bat 'docker --version'
+                bat 'kubectl version --client'
+            }
+        }
+
         stage('Backend Tests') {
             steps {
                 echo 'Executing Backend unit and API tests...'
@@ -63,8 +72,6 @@ pipeline {
                     writeFile file: 'docker_pat.txt', text: env.DOCKER_PASS_VAR
                     bat '''
                         docker logout
-                        echo Username=%DOCKER_USER_VAR%
-                        powershell -Command "Write-Output 'Password Length:'; Write-Output $env:DOCKER_PASS_VAR.Length"
                         type docker_pat.txt | docker login -u %DOCKER_USER_VAR% --password-stdin
                         if exist docker_pat.txt del docker_pat.txt
                     '''
@@ -76,38 +83,50 @@ pipeline {
             }
         }
 
-        stage('kubectl Apply') {
+        stage('Deploy to Kubernetes') {
             steps {
                 echo 'Applying Kubernetes manifests...'
                 bat 'kubectl apply -f k8s/'
             }
         }
 
-        stage('Rollout Status') {
+        stage('Verify Deployment') {
             steps {
-                echo 'Verifying Kubernetes Deployment Rollouts...'
+                echo 'Verifying Kubernetes deployment status...'
+                bat 'kubectl get deployments'
+                bat 'kubectl get pods'
+                bat 'kubectl get services'
                 bat 'kubectl rollout status deployment/backend-deployment'
                 bat 'kubectl rollout status deployment/frontend-deployment'
             }
         }
 
-        stage('Health Check') {
+        stage('Cleanup') {
             steps {
-                echo 'Performing diagnostic cluster health check...'
-                bat 'kubectl get pods,svc'
+                echo 'Cleaning unused Docker images...'
+                bat 'docker image prune -f'
             }
         }
     }
 
     post {
-        always {
-            bat 'if exist docker_pat.txt del docker_pat.txt'
-        }
         success {
-            echo 'Jenkins CI/CD Pipeline Completed Successfully! MeetFlow AI is deployed.'
+            echo 'Deployment completed successfully. MeetFlow AI is live!'
         }
+
         failure {
-            echo 'Jenkins CI/CD Pipeline Failed. Please check stage logs above.'
+            echo 'Deployment failed. Rolling back Kubernetes deployment...'
+            bat 'kubectl rollout undo deployment/backend-deployment'
+            bat 'kubectl rollout undo deployment/frontend-deployment'
+            bat 'kubectl rollout status deployment/backend-deployment'
+            bat 'kubectl rollout status deployment/frontend-deployment'
+            echo 'Rollback completed.'
+        }
+
+        always {
+            echo 'Performing post-build cleanup...'
+            bat 'docker logout'
+            bat 'if exist docker_pat.txt del docker_pat.txt'
         }
     }
 }
