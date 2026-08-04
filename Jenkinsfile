@@ -1,11 +1,19 @@
 pipeline {
     agent any
 
+    options {
+        buildDiscarder(logRotator(
+            numToKeepStr: '20',
+            artifactNumToKeepStr: '10'
+        ))
+        disableConcurrentBuilds()
+    }
+
     environment {
         DOCKER_USER = 'yashanandd'
-        BACKEND_IMAGE = "${DOCKER_USER}/meetflow-backend:${BUILD_NUMBER}"
+        BACKEND_TAG = "${DOCKER_USER}/meetflow-backend:${BUILD_NUMBER}"
         BACKEND_LATEST = "${DOCKER_USER}/meetflow-backend:latest"
-        FRONTEND_IMAGE = "${DOCKER_USER}/meetflow-frontend:${BUILD_NUMBER}"
+        FRONTEND_TAG = "${DOCKER_USER}/meetflow-frontend:${BUILD_NUMBER}"
         FRONTEND_LATEST = "${DOCKER_USER}/meetflow-frontend:latest"
         DOCKER_CREDS_ID = 'dockerhub-creds1'
     }
@@ -53,15 +61,15 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo 'Building Docker containers for backend and frontend...'
-                bat "docker build -t ${BACKEND_IMAGE} -t ${BACKEND_LATEST} ./backend"
-                bat "docker build -t ${FRONTEND_IMAGE} -t ${FRONTEND_LATEST} ./frontend"
+                echo "Building Docker containers (Tag: Build #${env.BUILD_NUMBER})..."
+                bat "docker build -t ${BACKEND_TAG} -t ${BACKEND_LATEST} ./backend"
+                bat "docker build -t ${FRONTEND_TAG} -t ${FRONTEND_LATEST} ./frontend"
             }
         }
 
         stage('Docker Push') {
             steps {
-                echo 'Authenticating and pushing Docker images to Docker Hub...'
+                echo 'Authenticating and pushing immutable Docker images to Docker Hub...'
                 withCredentials([
                     usernamePassword(
                         credentialsId: "${DOCKER_CREDS_ID}",
@@ -75,9 +83,9 @@ pipeline {
                         type docker_pat.txt | docker login -u %DOCKER_USER_VAR% --password-stdin
                         if exist docker_pat.txt del docker_pat.txt
                     '''
-                    bat "docker push ${BACKEND_IMAGE}"
+                    bat "docker push ${BACKEND_TAG}"
                     bat "docker push ${BACKEND_LATEST}"
-                    bat "docker push ${FRONTEND_IMAGE}"
+                    bat "docker push ${FRONTEND_TAG}"
                     bat "docker push ${FRONTEND_LATEST}"
                 }
             }
@@ -85,25 +93,25 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                echo 'Applying Kubernetes manifests...'
+                echo "Deploying immutable image tags (Build #${env.BUILD_NUMBER}) via rolling update..."
                 bat 'kubectl apply -f k8s/'
+                bat "kubectl set image deployment/backend-deployment backend=${BACKEND_TAG}"
+                bat "kubectl set image deployment/frontend-deployment frontend=${FRONTEND_TAG}"
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                echo 'Verifying Kubernetes deployment status...'
-                bat 'kubectl get deployments'
-                bat 'kubectl get pods'
-                bat 'kubectl get services'
+                echo 'Verifying Kubernetes rolling deployment rollout...'
                 bat 'kubectl rollout status deployment/backend-deployment'
                 bat 'kubectl rollout status deployment/frontend-deployment'
+                bat 'kubectl get pods,svc'
             }
         }
 
         stage('Cleanup') {
             steps {
-                echo 'Cleaning unused Docker images...'
+                echo 'Cleaning unused Docker dangling images...'
                 bat 'docker image prune -f'
             }
         }
@@ -111,16 +119,29 @@ pipeline {
 
     post {
         success {
-            echo 'Deployment completed successfully. MeetFlow AI is live!'
+            script {
+                echo """
+==================================================
+        DEPLOYMENT SUCCESSFUL - MEETFLOW AI
+==================================================
+Application    : MeetFlow AI
+Build Number   : ${env.BUILD_NUMBER}
+Backend Image  : ${BACKEND_TAG}
+Frontend Image : ${FRONTEND_TAG}
+K8s Namespace  : default
+Status         : Healthy & Operational
+==================================================
+"""
+            }
         }
 
         failure {
-            echo 'Deployment failed. Rolling back Kubernetes deployment...'
+            echo 'Deployment failed! Triggering automatic Kubernetes rollback...'
             bat 'kubectl rollout undo deployment/backend-deployment'
             bat 'kubectl rollout undo deployment/frontend-deployment'
             bat 'kubectl rollout status deployment/backend-deployment'
             bat 'kubectl rollout status deployment/frontend-deployment'
-            echo 'Rollback completed.'
+            echo 'Automatic Rollback Completed.'
         }
 
         always {
