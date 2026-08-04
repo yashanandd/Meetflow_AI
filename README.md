@@ -40,37 +40,37 @@ MeetFlow AI is a production-ready, full-stack AI-powered meeting management appl
 
 ```
 Meetflow_AI/
-├── app/                      # FastAPI Backend
-│   ├── ai/                   # Pluggable AI Summarization engine & fallbacks
-│   ├── api/                  # API Routers (Auth, Meetings, Notes, Tasks, Dashboard, Health)
-│   ├── core/                 # Config & Security (JWT, Hashing)
-│   ├── database/             # SQLAlchemy Engine, Base, & Session management
-│   ├── middleware/           # Auth middleware & Global error handling
-│   ├── models/               # SQLAlchemy Models (User, Meeting, MeetingNote, Task)
-│   ├── repositories/         # Database access layer
-│   ├── schemas/              # Pydantic schemas
-│   ├── services/             # Business logic services
-│   ├── utils/                # Helper utilities
-│   └── main.py               # Main FastAPI entry point
+├── backend/                  # FastAPI Backend Service
+│   ├── alembic/              # Database migration scripts
+│   ├── app/                  # FastAPI application code
+│   │   ├── ai/               # AI Summarization engine & fallbacks
+│   │   ├── api/              # API Routers (Auth, Meetings, Notes, Tasks, Dashboard)
+│   │   ├── core/             # Config & Security (JWT, Hashing)
+│   │   ├── database/         # SQLAlchemy Engine, Base, & Session management
+│   │   ├── middleware/       # Auth middleware & Global error handling
+│   │   ├── models/           # SQLAlchemy Models
+│   │   ├── repositories/     # Database access layer
+│   │   ├── schemas/          # Pydantic schemas
+│   │   ├── services/         # Business logic services
+│   │   ├── utils/            # Helper utilities
+│   │   └── main.py           # Main FastAPI entry point
+│   ├── alembic.ini           # Alembic configuration
+│   ├── requirements.txt      # Backend Python dependencies
+│   └── Dockerfile            # Backend Docker container setup
 │
-├── src/                      # React (Vite) Frontend
-│   ├── api/                  # Centralized API service methods
-│   ├── assets/               # Static assets & graphics
-│   ├── components/           # Reusable UI components (Navbar, Sidebar, Modals, Tables, Cards)
-│   ├── context/              # Context providers (AuthContext, ToastContext, ThemeContext)
-│   ├── hooks/                # Custom React hooks
-│   ├── layouts/              # Auth & Dashboard Layout wrappers
-│   ├── pages/                # Application pages (Dashboard, Meetings, Tasks, Profile, Settings, etc.)
-│   ├── routes/               # Router definitions & Protected route guards
-│   └── utils/                # Utility helpers & formatters
+├── frontend/                 # React (Vite) Frontend Application
+│   ├── src/                  # React source code (Components, Pages, Routes, API)
+│   ├── index.html            # Application HTML entry point
+│   ├── package.json          # Frontend dependencies & scripts
+│   ├── vite.config.js        # Vite configuration & API proxy
+│   ├── tailwind.config.js    # Tailwind CSS configuration
+│   ├── postcss.config.js     # PostCSS configuration
+│   └── Dockerfile            # Frontend Docker container setup
 │
-├── alembic/                  # Database migration scripts
+├── .dockerignore             # Docker build ignore rules
+├── docker-compose.yml        # Multi-container Docker orchestration
 ├── .env.example              # Sample environment configuration
-├── alembic.ini               # Alembic configuration
-├── package.json              # Frontend dependencies
-├── requirements.txt          # Backend dependencies
-├── vite.config.js            # Vite configuration
-└── README.md
+└── README.md                 # Project documentation
 ```
 
 ---
@@ -80,13 +80,29 @@ Meetflow_AI/
 ### Prerequisites
 - Node.js (v18+)
 - Python (3.10+)
-- MySQL Server (or SQLite for quick local development)
+- Docker & Docker Compose (Optional, for containerized run)
 
-### 1. Backend Setup
+### 1. Docker Setup (Recommended)
+
+Run both Backend and Frontend with a single command:
 
 ```bash
-# Navigate to project root
-cd Meetflow_AI
+docker compose up --build
+```
+
+- **Frontend Application**: `http://localhost:5173`
+- **Backend API**: `http://localhost:8000`
+- **API Documentation**: `http://localhost:8000/docs`
+
+---
+
+### 2. Manual Local Setup
+
+#### Backend Setup
+
+```bash
+# Navigate to backend directory
+cd backend
 
 # Create virtual environment
 python -m venv .venv
@@ -96,7 +112,7 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
 # Configure environment variables
-cp .env.example .env
+cp ../.env.example .env
 
 # Run database migrations
 alembic upgrade head
@@ -106,10 +122,13 @@ uvicorn app.main:app --reload --port 8000
 ```
 Backend will be live at `http://localhost:8000`. API docs available at `http://localhost:8000/docs`.
 
-### 2. Frontend Setup
+#### Frontend Setup
 
 ```bash
-# Install frontend dependencies
+# Navigate to frontend directory
+cd frontend
+
+# Install dependencies
 npm install
 
 # Start Vite development server
@@ -117,22 +136,11 @@ npm run dev
 ```
 Frontend will be live at `http://localhost:5173`.
 
-### 3. Docker (Beginner Friendly)
-
-Run both Backend and Frontend in one command:
-
-```bash
-docker compose up --build
-```
-
-- **Frontend**: `http://localhost:5173`
-- **Backend API**: `http://localhost:8000`
-
 ---
 
 ## Environment Variables Configuration
 
-Create a `.env` file in the root directory (refer to `.env.example`):
+Create a `.env` file in the root or `backend/` directory (refer to `.env.example`):
 
 ```env
 # Backend Settings
@@ -141,10 +149,10 @@ SECRET_KEY="your-super-secret-jwt-key"
 ALGORITHM="HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
-# Database Configuration (MySQL default, SQLite optional)
-DATABASE_URL="mysql+pymysql://root:password@localhost:3306/meetflow_db"
-# Alternative SQLite for zero-config testing:
-# DATABASE_URL="sqlite:///./meetflow.db"
+# Database Configuration (SQLite default, MySQL optional)
+DATABASE_URL="sqlite:///./meetflow.db"
+# MYSQL Database Example:
+# DATABASE_URL="mysql+pymysql://root:password@localhost:3306/meetflow_db"
 
 # AI Provider Configuration (Optional)
 AI_PROVIDER="heuristic" # Options: openai, gemini, heuristic
@@ -190,7 +198,6 @@ CORS_ORIGINS=["http://localhost:5173", "http://localhost:3000"]
 - Audio/Video Transcript AI Summarization
 - Webhook notifications & Slack/Teams Integration
 - Real-time Collaborative Note Editing via WebSockets
-- Containerization with Docker & Kubernetes CI/CD pipelines
 
 ---
 
