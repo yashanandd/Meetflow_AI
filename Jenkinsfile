@@ -7,7 +7,7 @@ pipeline {
         BACKEND_LATEST = "${DOCKER_USER}/meetflow-backend:latest"
         FRONTEND_IMAGE = "${DOCKER_USER}/meetflow-frontend:${BUILD_NUMBER}"
         FRONTEND_LATEST = "${DOCKER_USER}/meetflow-frontend:latest"
-        DOCKER_CREDS_ID = 'docker-hub-credentials'
+        DOCKER_CREDS_ID = 'dockerhub-creds1'
     }
 
     stages {
@@ -54,7 +54,9 @@ pipeline {
             steps {
                 echo 'Authenticating and pushing Docker images to Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
-                    bat 'docker login -u %DOCKER_USER_VAR% -p "%DOCKER_PASS_VAR%"'
+                    bat '''
+                        echo %DOCKER_PASS_VAR% | docker login -u %DOCKER_USER_VAR% --password-stdin
+                    '''
                     bat "docker push ${BACKEND_IMAGE}"
                     bat "docker push ${BACKEND_LATEST}"
                     bat "docker push ${FRONTEND_IMAGE}"
