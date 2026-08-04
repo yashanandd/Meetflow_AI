@@ -96,6 +96,23 @@ docker compose up --build
 
 ---
 
+### 2. Kubernetes Deployment (Minikube / Cluster)
+
+Deploy to Kubernetes using manifests in the `k8s/` directory:
+
+```bash
+# Apply all Kubernetes manifests
+kubectl apply -f k8s/
+
+# Verify status of Pods and Services
+kubectl get pods,svc
+```
+
+- **Frontend NodePort Service**: Port `30080` (or `minikube service frontend-service`)
+- **Backend Service**: `http://backend-service:8000` (Internal ClusterIP)
+
+---
+
 ### 2. Manual Local Setup
 
 #### Backend Setup
