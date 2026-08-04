@@ -10,3 +10,4 @@ data:
   DATABASE_URL: "sqlite:///./meetflow.db"
   AI_PROVIDER: "heuristic"
   VITE_BACKEND_URL: "http://backend-service:8000"
+  VITE_API_BASE_URL: "/api/v1"
