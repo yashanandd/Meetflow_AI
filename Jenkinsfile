@@ -55,6 +55,7 @@ pipeline {
                 echo 'Authenticating and pushing Docker images to Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
                     bat '''
+                        docker logout
                         echo %DOCKER_PASS_VAR% | docker login -u %DOCKER_USER_VAR% --password-stdin
                     '''
                     bat "docker push ${BACKEND_IMAGE}"
