@@ -22,9 +22,9 @@ pipeline {
             steps {
                 echo 'Executing Backend unit and API tests...'
                 dir('backend') {
-                    sh '''
-                        python3 -m venv .venv || python -m venv .venv
-                        . .venv/bin/activate || true
+                    bat '''
+                        if not exist .venv ( python -m venv .venv )
+                        call .venv\\Scripts\\activate.bat
                         pip install -r requirements.txt
                         pytest
                     '''
@@ -36,8 +36,8 @@ pipeline {
             steps {
                 echo 'Building Frontend production bundle...'
                 dir('frontend') {
-                    sh 'npm install'
-                    sh 'npm run build'
+                    bat 'npm install'
+                    bat 'npm run build'
                 }
             }
         }
@@ -45,8 +45,8 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker containers for backend and frontend...'
-                sh "docker build -t ${BACKEND_IMAGE} -t ${BACKEND_LATEST} ./backend"
-                sh "docker build -t ${FRONTEND_IMAGE} -t ${FRONTEND_LATEST} ./frontend"
+                bat "docker build -t ${BACKEND_IMAGE} -t ${BACKEND_LATEST} ./backend"
+                bat "docker build -t ${FRONTEND_IMAGE} -t ${FRONTEND_LATEST} ./frontend"
             }
         }
 
@@ -54,11 +54,11 @@ pipeline {
             steps {
                 echo 'Pushing Docker images to Docker Hub...'
                 withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDS_ID}", usernameVariable: 'DOCKER_USER_VAR', passwordVariable: 'DOCKER_PASS_VAR')]) {
-                    sh 'echo "$DOCKER_PASS_VAR" | docker login -u "$DOCKER_USER_VAR" --password-stdin'
-                    sh "docker push ${BACKEND_IMAGE}"
-                    sh "docker push ${BACKEND_LATEST}"
-                    sh "docker push ${FRONTEND_IMAGE}"
-                    sh "docker push ${FRONTEND_LATEST}"
+                    bat 'echo %DOCKER_PASS_VAR% | docker login -u %DOCKER_USER_VAR% --password-stdin'
+                    bat "docker push ${BACKEND_IMAGE}"
+                    bat "docker push ${BACKEND_LATEST}"
+                    bat "docker push ${FRONTEND_IMAGE}"
+                    bat "docker push ${FRONTEND_LATEST}"
                 }
             }
         }
@@ -66,22 +66,22 @@ pipeline {
         stage('kubectl Apply') {
             steps {
                 echo 'Applying Kubernetes manifests...'
-                sh 'kubectl apply -f k8s/'
+                bat 'kubectl apply -f k8s/'
             }
         }
 
         stage('Rollout Status') {
             steps {
                 echo 'Verifying Kubernetes Deployment Rollouts...'
-                sh 'kubectl rollout status deployment/backend-deployment'
-                sh 'kubectl rollout status deployment/frontend-deployment'
+                bat 'kubectl rollout status deployment/backend-deployment'
+                bat 'kubectl rollout status deployment/frontend-deployment'
             }
         }
 
         stage('Health Check') {
             steps {
                 echo 'Performing diagnostic cluster health check...'
-                sh 'kubectl get pods,svc'
+                bat 'kubectl get pods,svc'
             }
         }
     }
