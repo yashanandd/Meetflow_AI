@@ -1,11 +1,13 @@
 services:
   backend:
     build: ./backend
+    image: yashanandd/meetflow-backend:v1.0.0
     ports:
       - "8000:8000"
 
   frontend:
     build: ./frontend
+    image: yashanandd/meetflow-frontend:v1.0.0
     ports:
       - "5173:5173"
     environment:
